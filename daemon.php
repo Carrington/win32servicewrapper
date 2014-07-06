@@ -5,7 +5,7 @@ define('WIN32_ERROR_CALL_NOT_IMPLEMENTED', 120);
 //Base class for Win32 services
 abstract class Daemon {
 	protected $serviceName					= '';
-	protected $serviceDisplayName		= '';
+	protected $serviceDisplayName	  = '';
 	protected $serviceDescription		= '';
 	protected $user									= null;
 	protected $password							= null;
