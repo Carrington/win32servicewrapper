@@ -12,25 +12,34 @@ abstract class Daemon {
 	protected $path									= 'C:\\wamp\\bin\\php\\php5.5.14\\php-win.exe';
 	protected $svc_type							= WIN32_SERVICE_WIN32_OWN_PROCESS;
 	protected $start_type						= WIN32_SERVICE_AUTO_START;
-	protected $error_control				= WIN32_SERVER_ERROR_IGNORE;
+	protected $error_control				= WIN32_SERVICE_ERROR_IGNORE;
 	protected $delayed_start				= false;
 	protected $base_priority				= WIN32_NORMAL_PRIORITY_CLASS;
 	protected $msgs									= array();
-
+	
 	//Pre-run work
 	abstract protected function setupRun($params = null);
-	
 	//Work to be executed in each loop frame
 	abstract protected function work();
 	
+	public function __construct($params = null) {
+		if (! $params) {
+			return;
+		}
+		$this->user = $params['user'] ?: null;
+		$this->password = $params['password'] ?: null;
+		$this->path = $params['path'] ?: 'C:\\wamp\\bin\\php\\php5.5.14\\php-win.exe';
+		$this->svc_type = $params['svc_type'] ?: WIN32_SERVICE_WIN32_OWN_PROCESS;
+	}
+	
 	public function create() {
 		$params =  array(
-			"service" 			=> $this->serviceName,
-			"dispaly" 			=> $this->serviceDisplayName,
+			"service" 		=> $this->serviceName,
+			"dispaly" 		=> $this->serviceDisplayName,
 			"description" 	=> $this->serviceDescription,
-			"path"					=> $this->path,
-			"svc_type"			=> $this->svc_type,
-			"start_type"		=> $this->start_type,
+			"path"			=> $this->path,
+			"svc_type"		=> $this->svc_type,
+			"start_type"	=> $this->start_type,
 			"error_control"	=> $this->error_control,
 			"delayed_start"	=> $this->delayed_start,
 			"base_priority" => $this->base_priority
@@ -39,7 +48,7 @@ abstract class Daemon {
 			$params['user'] = $this->user;
 			$params['password'] = $this->password;
 		}
-		if(win32_create_service($params)) {
+		if(win32_create_service($params) == WIN32_NO_ERROR) {
 			error_log("Service " . $this->serviceDisplayName . " created.");
 			return true;
 		}
@@ -47,7 +56,7 @@ abstract class Daemon {
 	}
 	
 	public function start() {
-		if(win32_start_service($ServiceName)) {
+		if(win32_start_service($this->serviceName)) {
 			error_log($this->serviceDisplayName . " Status: Started");
 			return true;
 		}
@@ -56,20 +65,21 @@ abstract class Daemon {
 	
 	public function run() {
 		//TRUE on success; FALSE on parameter problem; Win32 Error Code on error
-		$code =  win32_start_service_ctrl_dispatcher($ServiceName);
+		$code =  win32_start_service_ctrl_dispatcher($this->serviceName);
 		if(! $code) {
 			throw new \Exception("Error running service: " . $this->serviceDisplayName . ". Was the service started?");
 		}
-		if($code !== TRUE) {
-			throw new \Exception("Error running service: " . $this->serviceDisplayName . " with code: " . $code);
+		if($code !== TRUE && php_sapi_name() !== 'cli') {
+			$codeName = array_search($code, get_defined_constants(true)['win32service']);
+			throw new \Exception("Error running service: " . $this->serviceDisplayName . " with code: " . $codeName	);
 		}
         win32_set_service_status(WIN32_SERVICE_START_PENDING);
-		
+		error_log("Service " . $this->serviceDisplayName . " setting up run...");
 		$this->setupRun();
 		
 		win32_set_service_status(WIN32_SERVICE_RUNNING);
-		
-		while(WIN32_SERVICE_CONTROL_STOP 1== win32_get_last_control_message()) {
+		error_log("Service " . $this->serviceDisplayName . " running...");
+		while(WIN32_SERVICE_CONTROL_STOP !== win32_get_last_control_message()) {
 			$this->msgs[] = win32_get_last_control_message();
 			$this->work();
 		}
@@ -95,7 +105,7 @@ abstract class Daemon {
 	}
 	
 	public function status() {
-		return win32_query_service_status($ServiceName);
+		return win32_query_service_status($this->serviceName);
 	}
 }
 
