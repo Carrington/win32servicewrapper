@@ -48,7 +48,7 @@ abstract class Daemon {
 	
 	public function start() {
 		if(win32_start_service($ServiceName)) {
-			error_log($this->serviceDisplayName . " Status: Stopped");
+			error_log($this->serviceDisplayName . " Status: Started");
 			return true;
 		}
 		throw new \Exception("Error Stopping Service: " . $this->serviceDisplayName);
