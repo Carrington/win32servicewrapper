@@ -26,16 +26,12 @@ abstract class Daemon {
 		/*if (! $params) {
 			return;
 		}*/
-		foreach([	'user'=>null,
-					'password'=>null,
-					'path'=>$this->path,
-					'svc_type'=>WIN32_SERVICE_WIN32_OWN_PROCESS	] as $param => $val){
+		foreach([	'user'		=>null,
+					'password'	=>null,
+					'path'		=>$this->path,
+					'svc_type'	=>WIN32_SERVICE_WIN32_OWN_PROCESS	] as $param => $val){
 			if(array_key_exists($param,$params)) $this->{$param} = $params[$param] ?: $val;
 		}
-		/*$this->user = $params['user'] ?: null;
-		$this->password = $params['password'] ?: null;
-		$this->path = $params['path'] ?: 'C:\php\php-win.exe';
-		$this->svc_type = $params['svc_type'] ?: WIN32_SERVICE_WIN32_OWN_PROCESS;*/
 	}
 	
 	public function create() {
