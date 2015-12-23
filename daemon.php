@@ -4,12 +4,12 @@ define('WIN32_ERROR_CALL_NOT_IMPLEMENTED', 120);
 
 //Base class for Win32 services
 abstract class Daemon {
-	protected $serviceName		= '';
-	protected $serviceDisplayName	= '';
-	protected $serviceDescription	= '';
+	protected $serviceName		= 'testService';
+	protected $serviceDisplayName	= 'testService';
+	protected $serviceDescription	= 'testService';
 	protected $user			= null;
 	protected $password		= null;
-	protected $path			= 'C:\\wamp\\bin\\php\\php5.5.14\\php-win.exe';
+	protected $path			= 'c:\php\php-win.exe';
 	protected $svc_type		= WIN32_SERVICE_WIN32_OWN_PROCESS;
 	protected $start_type		= WIN32_SERVICE_AUTO_START;
 	protected $error_control	= WIN32_SERVICE_ERROR_IGNORE;
@@ -23,13 +23,19 @@ abstract class Daemon {
 	abstract protected function work();
 	
 	public function __construct($params = null) {
-		if (! $params) {
+		/*if (! $params) {
 			return;
+		}*/
+		foreach([	'user'=>null,
+					'password'=>null,
+					'path'=>$this->path,
+					'svc_type'=>WIN32_SERVICE_WIN32_OWN_PROCESS	] as $param => $val){
+			if(array_key_exists($param,$params)) $this->{$param} = $params[$param] ?: $val;
 		}
-		$this->user = $params['user'] ?: null;
+		/*$this->user = $params['user'] ?: null;
 		$this->password = $params['password'] ?: null;
-		$this->path = $params['path'] ?: 'C:\\wamp\\bin\\php\\php5.5.14\\php-win.exe';
-		$this->svc_type = $params['svc_type'] ?: WIN32_SERVICE_WIN32_OWN_PROCESS;
+		$this->path = $params['path'] ?: 'C:\php\php-win.exe';
+		$this->svc_type = $params['svc_type'] ?: WIN32_SERVICE_WIN32_OWN_PROCESS;*/
 	}
 	
 	public function create() {
@@ -60,7 +66,7 @@ abstract class Daemon {
 			error_log($this->serviceDisplayName . " Status: Started");
 			return true;
 		}
-		throw new \Exception("Error Stopping Service: " . $this->serviceDisplayName);
+		throw new \Exception("Error Starting Service: " . $this->serviceDisplayName);
 	}
 	
 	public function run() {
@@ -90,13 +96,13 @@ abstract class Daemon {
 			error_log($this->serviceDisplayName . " Status: Stopped");
 			return true;
 		}
-		throw new \Exception("Error Starting Service: " . $this->serviceDisplayName);
+		throw new \Exception("Error Stopping Service: " . $this->serviceDisplayName);
 	}
 	
 	public function delete() {
-		if ($this->status() !== WIN32_SERVICE_STOPPED) {
+		/*if ($this->status() !== WIN32_SERVICE_STOPPED) {
 			throw new \Exception("Service  " . $this->serviceDisplayName . " is not stopped.");
-		}
+		}*/
 		if(win32_delete_service($this->serviceName)) {
 			error_log("Service " . $this->serviceDisplayName . "  deleted");
 			return true;
